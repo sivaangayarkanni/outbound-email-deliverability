@@ -1,0 +1,57 @@
+# Postfix outbound / submission sketch.
+# Merge into main.cf. Do not paste blindly over a working server.
+
+myhostname = mail.example.com
+mydomain = example.com
+myorigin = $mydomain
+
+# Announce a real FQDN
+smtp_helo_name = mail.example.com
+
+# Networks allowed to relay through this box (tighten this)
+mynetworks = 127.0.0.0/8, [::1]/128
+smtpd_recipient_restrictions =
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination
+
+# --- TLS inbound (submission) ---
+smtpd_tls_cert_file = /etc/letsencrypt/live/mail.example.com/fullchain.pem
+smtpd_tls_key_file  = /etc/letsencrypt/live/mail.example.com/privkey.pem
+smtpd_tls_security_level = encrypt
+smtpd_tls_protocols = >=TLSv1.2
+smtpd_tls_mandatory_protocols = >=TLSv1.2
+smtpd_tls_mandatory_ciphers = high
+smtpd_tls_exclude_ciphers = aNULL, eNULL, EXPORT, DES, RC4, MD5, PSK, aECDH, EDH-DSS-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA, KRB5-DES, 3DES
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+
+# --- TLS outbound ---
+smtp_tls_security_level = may
+smtp_tls_protocols = >=TLSv1.2
+smtp_tls_mandatory_protocols = >=TLSv1.2
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+smtp_tls_loglevel = 1
+
+# --- SASL on submission ---
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_security_options = noanonymous
+smtpd_tls_auth_only = yes
+
+# --- DKIM milter (OpenDKIM) ---
+milter_default_action = accept
+milter_protocol = 6
+smtpd_milters = inet:localhost:8891
+non_smtpd_milters = inet:localhost:8891
+
+# --- Hygiene ---
+disable_vrfy_command = yes
+smtpd_helo_required = yes
+message_size_limit = 26214400
+
+# Destination concurrency — be polite to Gmail
+default_destination_concurrency_limit = 10
+gmail_destination_concurrency_limit = 5
+
+# Bounce copies for the suppressor to parse
+notify_classes = bounce, 2bounce, resource, software

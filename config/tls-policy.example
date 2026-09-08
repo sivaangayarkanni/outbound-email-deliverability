@@ -1,0 +1,13 @@
+# Optional Postfix tls_policy_maps for destinations that must never fall back
+# to cleartext once you know they support TLS.
+#
+# /etc/postfix/tls_policy
+#
+# gmail.com      encrypt protocols>=TLSv1.2
+# google.com     encrypt protocols>=TLSv1.2
+# outlook.com    encrypt protocols>=TLSv1.2
+# hotmail.com    encrypt protocols>=TLSv1.2
+# yahoo.com      encrypt protocols>=TLSv1.2
+#
+# Then in main.cf:
+# smtp_tls_policy_maps = hash:/etc/postfix/tls_policy
