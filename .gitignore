@@ -1,0 +1,18 @@
+# Local inventory and secrets — never commit
+inventory/senders.yaml
+inventory/suppression-list.csv
+*.pem
+*.key
+opendkim/keys/
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+.DS_Store
+.idea/
+.vscode/

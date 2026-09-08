@@ -1,0 +1,48 @@
+name: deliverability-check
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/**"
+      - ".github/workflows/deliverability-check.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r scripts/requirements.txt
+      - name: Syntax check
+        run: python3 -m py_compile scripts/*.py
+      - name: Warmup calendar smoke
+        run: python3 scripts/warmup_schedule.py --days 14 --start 20 --target-per-day 500
+      - name: Bounce suppressor smoke
+        run: |
+          echo '{"email":"ci-bounce@example.com","reason":"hard_bounce","code":"5.1.1","source":"ci"}' \
+            | python3 scripts/bounce_suppress.py --list /tmp/suppression.csv
+
+  live-dns:
+    if: ${{ vars.CHECK_DOMAIN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -r scripts/requirements.txt
+      - name: DNS audit
+        run: python3 scripts/check_dns.py "${{ vars.CHECK_DOMAIN }}"
+      - name: Blacklist audit
+        if: ${{ vars.CHECK_IP != '' }}
+        run: python3 scripts/check_blacklists.py "${{ vars.CHECK_IP }}" "${{ vars.CHECK_DOMAIN }}"
+      - name: rDNS audit
+        if: ${{ vars.CHECK_IP != '' }}
+        run: python3 scripts/check_rdns.py "${{ vars.CHECK_IP }}"

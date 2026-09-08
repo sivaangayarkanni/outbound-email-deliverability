@@ -1,0 +1,36 @@
+# Copy to senders.yaml (gitignored) and keep this current.
+# Every row here must appear in SPF and/or have a DKIM selector.
+
+domain: example.com
+
+senders:
+  - name: Google Workspace
+    purpose: people mail
+    spf: include:_spf.google.com
+    dkim_selector: google
+    volume: low
+    aligned_from: example.com
+
+  - name: Self-hosted Postfix
+    purpose: app transactional
+    spf: ip4:203.0.113.10
+    dkim_selector: s1
+    helo: mail.example.com
+    ptr: mail.example.com
+    volume: medium
+    aligned_from: example.com
+
+  - name: SendGrid
+    purpose: product notifications
+    spf: include:sendgrid.net
+    dkim_selector: s1
+    volume: medium
+    aligned_from: mail.example.com
+    notes: CNAME selectors provided by SendGrid
+
+mailboxes:
+  dmarc_aggregate: dmarc-reports@example.com
+  dmarc_forensic: dmarc-forensics@example.com
+  abuse: abuse@example.com
+  postmaster: postmaster@example.com
+  unsub: unsub@example.com
